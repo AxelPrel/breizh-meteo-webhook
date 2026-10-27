@@ -1,0 +1,37 @@
+name: Bulletin météo Breizh
+
+on:
+  schedule:
+    # 06:30 UTC = 07:30 en hiver / 08:30 en été à Paris.
+    # GitHub Actions utilise UTC et ne gère pas les fuseaux horaires IANA.
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: breizh-meteo
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installer les dépendances
+        run: python -m pip install -r requirements.txt
+
+      - name: Générer et publier le bulletin
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python meteo.py
